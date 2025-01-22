@@ -1,6 +1,6 @@
 from django import forms
-from menu.models import Dish
-from orders.models import Order
+from django.forms import inlineformset_factory
+from orders.models import Order, OrderItem
 
 TABLE_CHOSES = [(i, str(i)) for i in range(1, 11)]
 
@@ -11,10 +11,23 @@ class OrderCreate(forms.ModelForm):
         label="Номер столика",
         help_text="Выберите столик",
     )
-    items = forms.ModelMultipleChoiceField(
-        queryset=Dish.objects.all(), label="Блюда"
-    )
 
     class Meta:
         model = Order
         fields = ("table_number",)
+
+
+OrderItemFormSet = inlineformset_factory(
+    Order,
+    OrderItem,
+    # OrderCreate,
+    fields=("dish", "quantity"),
+    extra=3,
+    can_delete=True,
+)
+
+
+class OrderChangeStatus(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ("status",)
