@@ -1,6 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView
-from orders.forms import OrderCreate, OrderItemFormSet
+from django.views.generic.list import ListView
+from orders.forms import OrderChangeStatus, OrderCreate, OrderItemFormSet
 from orders.models import Order
 
 
@@ -23,3 +24,23 @@ class OrderCreateView(CreateView):
         formset = OrderItemFormSet()
         context["formset"] = formset
         return context
+
+
+class OrderListView(ListView):
+    queryset = Order.objects.all()
+    template_name = "orders/list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({"form_status": OrderChangeStatus()})
+        return context
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status = self.request.GET.get("status")
+        table_number = self.request.GET.get("table_number")
+        if status:
+            queryset = queryset.filter(status=status)
+        if table_number:
+            queryset = queryset.filter(table_number=table_number)
+        return queryset
