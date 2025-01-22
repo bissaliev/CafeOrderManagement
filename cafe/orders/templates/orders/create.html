@@ -7,8 +7,8 @@
 {% load order_tag %}
 <div class="row justify-content-center">
     <div class="col-md-8 p-5">
-        <div class="card">
-            <div class="card-header text-center">Создание заказа</div>
+        <div class="card border-warning">
+            <h4 class="card-header text-center">Создание заказа</h4>
             <div class="card-body">
                 {% if form.errors %}
                 {% for field in form %}
@@ -25,7 +25,7 @@
                 {% endfor %}
                 {% endif %}
 
-                <form method="post" action="{% url 'orders:order_create' %}">
+                <form method="post" class="" action="{% url 'orders:order_create' %}">
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="row my-3 p-3">
@@ -43,8 +43,37 @@
                         {% endif %}
                     </div>
                     {% endfor %}
-                    <div class="col-md-6 offset-md-4">
-                        <button type="submit" class="btn btn-primary">
+
+                    <div class="text-center">
+                        <h3 class="m-3">Позиции заказа:</h3>
+                        {{ formset.management_form }}
+                        {% for form in formset %}
+                        {{ form.id }}
+                        <div class="row gx-3 gy-2 align-items-center justify-content-center mb-3">
+                            <div class="col-sm-3">
+                                <label class="visually-hidden" for="id_items-{{ forloop.counter0 }}-dish">Блюдо</label>
+                                {{ form.dish|addclass:'form-select' }}
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="visually-hidden" for="id_items-{{ forloop.counter0 }}-quantity">Количество</label>
+                                {{ form.quantity|addclass:'form-control' }}
+                            </div>
+                            {% if formset.can_delete %}
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="{{ form.DELETE.id_for_label }}">
+                                    <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">
+                                        Удалить
+                                    </label>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6 offset-md-4 text-center mx-auto">
+                        <button type="submit" class="btn btn-warning">
                             Создать
                         </button>
                     </div>
