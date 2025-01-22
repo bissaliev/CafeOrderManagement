@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Список заказов{% endblock title %}
+
+{% block content %}
+<div class="container mt-2">
+    <h3>{% if request.GET.table_number %}Столик {{ request.GET.table_number }}{% else %}Все заказы{% endif %}: <span class="badge bg-secondary">{{ object_list|length }}</span> заказов</h3>
+    <div>
+        <ul class="nav nav-pills nav-fill mb-2 border-warning">
+            <li class="nav-item">
+                <a class="nav-link {% if not request.GET.status %}active bg-warning{% endif %}" aria-current="page" href="{% url 'orders:order_list' %}?table_number={{ request.GET.table_number }}">Все
+                    заказы</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.GET.status == 'В ожидании' %}active bg-warning{% endif %}" aria-current="page"
+                    href="{% url 'orders:order_list' %}?status=В%20ожидании&table_number={{ request.GET.table_number }}">В ожидании</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.GET.status == 'Готово' %}active bg-warning{% endif %}"
+                    href="{% url 'orders:order_list' %}?status=Готово&table_number={{ request.GET.table_number }}">Готово</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.GET.status == 'Оплачено' %}active bg-warning{% endif %}"
+                    href="{% url 'orders:order_list' %}?status=Оплачено&table_number={{ request.GET.table_number }}">Оплачено</a>
+            </li>
+        </ul>
+    </div>
+    <table class="table table-striped table-bordered border-warning">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Номер стола</th>
+                <th scope="col">Список блюд</th>
+                <th scope="col">Общая стоимость</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Удалить</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            {% for order in object_list %}
+            <tr>
+                <th scope="row">{{ order.id }} </th>
+                <td>{{ order.table_number }} </td>
+                <td>
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Название</th>
+                                <th scope="col">Стоимость</th>
+                                <th scope="col">Количество</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in order.items.all %}
+                            <tr>
+                                <th scope="col">{{ item.dish.name }} </th>
+                                <th scope="col">{{ item.price }} </th>
+                                <th scope="col">{{ item.quantity }} </th>
+                                {% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+                <td>{{ order.get_total_price }} </td>
+                <td class="align-middle">
+                    <form class="align-items-center" action="{% url 'orders:order_update_status' order.id %}" method="post" style="width: auto;">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <select name="status" class="form-select" id="order_{{ order.id }}" aria-label="Пример элемента выбора с помощью надстройки кнопки">
+                                <option value="В ожидании" {% if order.status == 'В ожидании' %}selected{% endif %}>В ожидании</option>
+
+                                <option value="Готово" {% if order.status == 'Готово' %}selected{% endif %}>Готово</option>
+
+                                <option value="Оплачено" {% if order.status == 'Оплачено' %}selected{% endif %}>Оплачено</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary" type="button">Обновить</button>
+                        </div>
+                    </form>
+                </td>
+                <td class="align-middle text-center">
+                    <form class="" action="{% url 'orders:order_delete' order.id %}" method="post" style="width: auto;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+{% endblock content %}
