@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import View
+from django.views.generic import TemplateView, View
 from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.list import ListView
 from orders.forms import OrderChangeStatus, OrderCreate, OrderItemFormSet
@@ -11,7 +11,7 @@ class OrderCreateView(CreateView):
     queryset = Order.objects.all()
     form_class = OrderCreate
     template_name = "orders/create.html"
-    success_url = reverse_lazy("menu:dish_list")
+    success_url = reverse_lazy("orders:order_list")
 
     def form_valid(self, form):
         form = self.get_form()
@@ -60,3 +60,13 @@ class OrderChangeStatusView(View):
 class OrderDeleteView(DeleteView):
     model = Order
     success_url = reverse_lazy("orders:order_list")
+
+
+class RevenueView(TemplateView):
+    template_name = "orders/revenue.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        total_revenue = Order.get_total_revenue()
+        context["total_revenue"] = total_revenue
+        return context

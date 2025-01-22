@@ -17,4 +17,9 @@ urlpatterns = [
         views.OrderDeleteView.as_view(),
         name="order_delete",
     ),
+    path(
+        "revenue/",
+        views.RevenueView.as_view(),
+        name="revenue",
+    ),
 ]
