@@ -3,7 +3,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-urlpatterns = [path("admin/", admin.site.urls), path("", include("menu.urls"))]
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("menu.urls", namespace="menu")),
+    path("orders/", include("orders.urls", namespace="orders")),
+]
 
 if settings.DEBUG:
     urlpatterns += static(
