@@ -1,5 +1,7 @@
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic.edit import CreateView
+from django.views.generic import View
+from django.views.generic.edit import CreateView, DeleteView
 from django.views.generic.list import ListView
 from orders.forms import OrderChangeStatus, OrderCreate, OrderItemFormSet
 from orders.models import Order
@@ -44,3 +46,17 @@ class OrderListView(ListView):
         if table_number:
             queryset = queryset.filter(table_number=table_number)
         return queryset
+
+
+class OrderChangeStatusView(View):
+    def post(self, request, id):
+        order = get_object_or_404(Order, pk=id)
+        form = OrderChangeStatus(request.POST, instance=order)
+        if form.is_valid:
+            form.save()
+        return redirect("orders:order_list")
+
+
+class OrderDeleteView(DeleteView):
+    model = Order
+    success_url = reverse_lazy("orders:order_list")
