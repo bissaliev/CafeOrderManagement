@@ -13,15 +13,15 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.GET.status == 'В ожидании' %}active bg-warning{% endif %}" aria-current="page"
-                    href="{% url 'orders:order_list' %}?status=В%20ожидании&table_number={{ request.GET.table_number }}">В ожидании</a>
+                    href="{% url 'orders:order_list' %}?status=В%20ожидании&table_number={{ request.GET.table_number }}"><span class="badge text-bg-warning">В ожидании</span></a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.GET.status == 'Готово' %}active bg-warning{% endif %}"
-                    href="{% url 'orders:order_list' %}?status=Готово&table_number={{ request.GET.table_number }}">Готово</a>
+                    href="{% url 'orders:order_list' %}?status=Готово&table_number={{ request.GET.table_number }}"><span class="badge text-bg-danger">Готово</span></a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if request.GET.status == 'Оплачено' %}active bg-warning{% endif %}"
-                    href="{% url 'orders:order_list' %}?status=Оплачено&table_number={{ request.GET.table_number }}">Оплачено</a>
+                    href="{% url 'orders:order_list' %}?status=Оплачено&table_number={{ request.GET.table_number }}"><span class="badge text-bg-success">Оплачено</span></a>
             </li>
         </ul>
     </div>
@@ -68,7 +68,9 @@
                     <form class="align-items-center" action="{% url 'orders:order_update_status' order.id %}" method="post" style="width: auto;">
                         {% csrf_token %}
                         <div class="input-group">
-                            <select name="status" class="form-select" id="order_{{ order.id }}" aria-label="Пример элемента выбора с помощью надстройки кнопки">
+                            <select name="status" class="form-select
+                            text-bg-{% if order.status == 'Оплачено' %}success{% elif order.status == 'Готово' %}danger {% else %}warning{% endif %}" id="order_{{ order.id }}"
+                                aria-label="Пример элемента выбора с помощью надстройки кнопки">
                                 <option value="В ожидании" {% if order.status == 'В ожидании' %}selected{% endif %}>В ожидании</option>
 
                                 <option value="Готово" {% if order.status == 'Готово' %}selected{% endif %}>Готово</option>
