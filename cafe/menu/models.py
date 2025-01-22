@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 
 class Dish(models.Model):
@@ -15,3 +16,9 @@ class Dish(models.Model):
         ordering = ["name"]
         verbose_name = "Блюдо"
         verbose_name_plural = "Блюда"
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("menu:dish_detail", kwargs={"pk": self.pk})
