@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import F, Sum
 
 User = get_user_model()
 
@@ -38,6 +39,16 @@ class Order(models.Model):
     def get_total_price(self):
         """Получение общей суммы заказа"""
         return sum(i.total_price for i in self.items.all())
+
+    @classmethod
+    def get_total_revenue(cls):
+        return (
+            cls.objects.filter(status=cls.Status.PAID)
+            .annotate(
+                total_order=Sum(F("items__price") * F("items__quantity"))
+            )
+            .aggregate(total_revenue=Sum("total_order"))["total_revenue"]
+        )
 
 
 class OrderItem(models.Model):
