@@ -1,0 +1,31 @@
+<!--Список блюд-->
+{% extends 'base.html' %}
+
+{% block title %}
+Список блюд
+{% endblock title %}
+
+{% block content %}
+
+<div>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        {% for obj in page_obj %}
+        <div class="col">
+            <div class="card border-warning">
+                <h5 class="card-header">{{ obj.name }}</h5>
+                <div class="card-body">
+                    <h5 class="card-text">${{ obj.price }}</h5>
+                    <a href="{% url 'menu:dish_detail' obj.id %}" class="btn btn-warning">Подробнее</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="my-5 d-flex justify-content-center">
+        {% include 'includes/pagination.html' %}
+    </div>
+
+</div>
+
+
+{% endblock content %}

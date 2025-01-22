@@ -1,0 +1,24 @@
+<!--Детальная информация блюда-->
+{% extends 'base.html' %}
+
+{% block title %}Блюдо{% endblock title %}
+
+{% block content %}
+<div class="d-flex justify-content-center m-5">
+    <div class="card border-warning">
+        <h1 class="card-header text-center">
+            {{ object.name }}
+        </h1>
+        <div class="card-body p-5">
+            <h5 class="card-title">${{ object.price }} </h5>
+            <p class="card-text">
+                {{ object.description }}
+            </p>
+            <a href="#" class="btn btn-warning">Заказать</a>
+        </div>
+        <div class="card-footer text-body-secondary">
+            Блюдо {{ object.id }}
+        </div>
+    </div>
+</div>
+{% endblock content %}
