@@ -1,8 +1,8 @@
-from django.contrib.auth import get_user_model
-from django.db import models
-from django.db.models import F, Sum
+from datetime import datetime, timedelta
 
-User = get_user_model()
+from django.db import models
+from django.db.models import Case, F, Sum, When
+from django.db.models.functions import Coalesce
 
 
 class Order(models.Model):
@@ -11,9 +11,9 @@ class Order(models.Model):
     class Status(models.TextChoices):
         """Статус заказа"""
 
-        PENDING = "В ожидании"
-        READY = "Готово"
-        PAID = "Оплачено"
+        PENDING = "PENDING", "В ожидании"
+        READY = "READY", "Готово"
+        PAID = "PAID", "Оплачено"
 
     table_number = models.CharField(
         "номер стола", max_length=10, db_index=True
@@ -41,14 +41,64 @@ class Order(models.Model):
         return sum(i.total_price for i in self.items.all())
 
     @classmethod
-    def get_total_revenue(cls):
-        return (
-            cls.objects.filter(status=cls.Status.PAID)
-            .annotate(
-                total_order=Sum(F("items__price") * F("items__quantity"))
-            )
-            .aggregate(total_revenue=Sum("total_order"))["total_revenue"]
+    def get_total_revenue_for_periods(cls):
+        """
+        Подсчёт общей выручки за несколько периодов
+        (всё время, сегодня, неделя, месяц).
+        """
+        now = datetime.now()
+        today = now.date()
+        start_of_week = today - timedelta(days=today.weekday())
+        start_of_month = today.replace(day=1)
+
+        # Фильтруем только оплаченные заказы
+        queryset = cls.objects.filter(status=cls.Status.PAID)
+
+        # Агрегируем данные
+        revenue = queryset.aggregate(
+            all_time=Coalesce(
+                Sum(F("items__price") * F("items__quantity")),
+                0,
+                output_field=models.DecimalField(),
+            ),
+            today=Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            updated__date=today,
+                            then=F("items__price") * F("items__quantity"),
+                        )
+                    )
+                ),
+                0,
+                output_field=models.DecimalField(),
+            ),
+            week=Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            updated__date__gte=start_of_week,
+                            then=F("items__price") * F("items__quantity"),
+                        )
+                    )
+                ),
+                0,
+                output_field=models.DecimalField(),
+            ),
+            month=Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            updated__date__gte=start_of_month,
+                            then=F("items__price") * F("items__quantity"),
+                        )
+                    )
+                ),
+                0,
+                output_field=models.DecimalField(),
+            ),
         )
+        return revenue
 
 
 class OrderItem(models.Model):
