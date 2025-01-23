@@ -46,9 +46,10 @@
 
                     <div class="text-center">
                         <h3 class="m-3">Позиции заказа:</h3>
+
                         {{ formset.management_form }}
+
                         {% for form in formset %}
-                        {{ form.id }}
                         <div class="row gx-3 gy-2 align-items-center justify-content-center mb-3">
                             <div class="col-sm-3">
                                 <label class="visually-hidden" for="id_items-{{ forloop.counter0 }}-dish">Блюдо</label>

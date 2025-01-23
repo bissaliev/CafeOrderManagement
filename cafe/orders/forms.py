@@ -20,10 +20,11 @@ class OrderCreate(forms.ModelForm):
 OrderItemFormSet = inlineformset_factory(
     Order,
     OrderItem,
-    # OrderCreate,
     fields=("dish", "quantity"),
-    extra=3,
-    can_delete=True,
+    extra=4,
+    can_delete=False,
+    min_num=1,
+    validate_min=True,
 )
 
 

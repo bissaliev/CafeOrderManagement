@@ -15,11 +15,16 @@ class OrderCreateView(CreateView):
 
     def form_valid(self, form):
         form = self.get_form()
-        order = form.save()
+        order = form.save(commit=False)
         formset = OrderItemFormSet(self.request.POST, instance=order)
         if formset.is_valid():
+            order.save()
             formset.save()
-        return super().form_valid(form)
+            return super().form_valid(form)
+        form.add_error(
+            field=None, error="Вы должны выбрать хотя бы один товар."
+        )
+        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -67,6 +72,6 @@ class RevenueView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        total_revenue = Order.get_total_revenue()
-        context["total_revenue"] = total_revenue
+        revenue_period = Order.get_total_revenue_for_periods()
+        context["revenue_period"] = revenue_period
         return context
