@@ -3,6 +3,7 @@
 {% block title %}Список заказов{% endblock title %}
 
 {% block content %}
+{% load order_tag %}
 <div class="container mt-2">
     <h3>{% if request.GET.table_number %}Столик {{ request.GET.table_number }}{% else %}Все заказы{% endif %}: <span class="badge bg-secondary">{{ object_list|length }}</span> заказов</h3>
     <div>
@@ -12,16 +13,16 @@
                     заказы</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.GET.status == 'В ожидании' %}active bg-warning{% endif %}" aria-current="page"
-                    href="{% url 'orders:order_list' %}?status=В%20ожидании&table_number={{ request.GET.table_number }}"><span class="badge text-bg-warning">В ожидании</span></a>
+                <a class="nav-link {% if request.GET.status == 'PENDING' %}active bg-warning{% endif %}" aria-current="page"
+                    href="{% url 'orders:order_list' %}?status=PENDING&table_number={{ request.GET.table_number }}"><span class="badge text-bg-warning">В ожидании</span></a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.GET.status == 'Готово' %}active bg-warning{% endif %}"
-                    href="{% url 'orders:order_list' %}?status=Готово&table_number={{ request.GET.table_number }}"><span class="badge text-bg-danger">Готово</span></a>
+                <a class="nav-link {% if request.GET.status == 'READY' %}active bg-warning{% endif %}" href="{% url 'orders:order_list' %}?status=READY&table_number={{ request.GET.table_number }}"><span
+                        class="badge text-bg-danger">Готово</span></a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.GET.status == 'Оплачено' %}active bg-warning{% endif %}"
-                    href="{% url 'orders:order_list' %}?status=Оплачено&table_number={{ request.GET.table_number }}"><span class="badge text-bg-success">Оплачено</span></a>
+                <a class="nav-link {% if request.GET.status == 'PAID' %}active bg-warning{% endif %}" href="{% url 'orders:order_list' %}?status=PAID&table_number={{ request.GET.table_number }}"><span
+                        class="badge text-bg-success">Оплачено</span></a>
             </li>
         </ul>
     </div>
@@ -41,7 +42,8 @@
             {% for order in object_list %}
             <tr>
                 <th scope="row">{{ order.id }} </th>
-                <td>{{ order.table_number }} </td>
+                <td><a class="fs-5 link-underline link-underline-opacity-0 link-warning link-underline-opacity-75-hover"
+                        href="{% url 'orders:order_list' %}?table_number={{ order.table_number }}">{{ order.table_number }}</a></td>
                 <td>
                     <table class="table mb-0">
                         <thead>
@@ -68,17 +70,26 @@
                     <form class="align-items-center" action="{% url 'orders:order_update_status' order.id %}" method="post" style="width: auto;">
                         {% csrf_token %}
                         <div class="input-group">
-                            <select name="status" class="form-select
-                            text-bg-{% if order.status == 'Оплачено' %}success{% elif order.status == 'Готово' %}danger {% else %}warning{% endif %}" id="order_{{ order.id }}"
-                                aria-label="Пример элемента выбора с помощью надстройки кнопки">
-                                <option value="В ожидании" {% if order.status == 'В ожидании' %}selected{% endif %}>В ожидании</option>
+                            <select name="status" class="form-select text-bg-{% if order.status == 'PAID' %}success{% elif order.status == 'READY' %}danger {% else %}warning{% endif %}"
+                                id="order_{{ order.id }}" aria-label="Пример элемента выбора с помощью надстройки кнопки">
+                                <option value="PENDING" {% if order.status == 'PENDING' %}selected{% endif %}>В ожидании</option>
 
-                                <option value="Готово" {% if order.status == 'Готово' %}selected{% endif %}>Готово</option>
+                                <option value="READY" {% if order.status == 'READY' %}selected{% endif %}>Готово</option>
 
-                                <option value="Оплачено" {% if order.status == 'Оплачено' %}selected{% endif %}>Оплачено</option>
+                                <option value="PAID" {% if order.status == 'PAID' %}selected{% endif %}>Оплачено</option>
                             </select>
                             <button type="submit" class="btn btn-primary" type="button">Обновить</button>
                         </div>
+                        {% comment %} <div class="input-group">
+                            {% if order.status == 'Оплачено' %}
+                            {{ form_status.status|add_selected:order.status|addclass:'form-select text-bg-success' }}
+                            {% elif order.status == 'Готово' %}
+                            {{ form_status.status|addclass:'form-select text-bg-danger' }}
+                            {% else %}
+                            {{ form_status.status|addclass:'form-select text-bg-warning' }}
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary" type="button">Обновить</button>
+                        </div> {% endcomment %}
                     </form>
                 </td>
                 <td class="align-middle text-center">
