@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "menu.apps.MenuConfig",
     "orders.apps.OrdersConfig",
+    "api.apps.ApiConfig",
 ]
 
 MIDDLEWARE = [
