@@ -1,48 +1,84 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView, View
-from django.views.generic.edit import CreateView, DeleteView
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from orders.forms import OrderChangeStatus, OrderCreate, OrderItemFormSet
 from orders.models import Order
 
 
 class OrderCreateView(CreateView):
+    """Создание заказа"""
+
     queryset = Order.objects.all()
     form_class = OrderCreate
     template_name = "orders/create.html"
     success_url = reverse_lazy("orders:order_list")
+    formset_class = OrderItemFormSet
 
     def form_valid(self, form):
-        form = self.get_form()
+        """Добавить обработку formset для позиций заказа"""
         order = form.save(commit=False)
-        formset = OrderItemFormSet(self.request.POST, instance=order)
+        formset = self.formset_class(self.request.POST, instance=order)
         if formset.is_valid():
+            formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             order.save()
             formset.save()
             return super().form_valid(form)
-        form.add_error(
-            field=None, error="Вы должны выбрать хотя бы один товар."
-        )
-        return super().form_invalid(form)
+        return self.form_invalid(form)
 
     def get_context_data(self, **kwargs):
+        """Добавить formset для позиций заказа в контекст"""
         context = super().get_context_data(**kwargs)
-        formset = OrderItemFormSet()
-        context["formset"] = formset
+        context["formset"] = self.formset_class(self.request.POST or None)
         return context
+
+
+class OrderUpdateView(UpdateView):
+    """Редактирование заказа"""
+
+    queryset = Order.objects.all()
+    form_class = OrderCreate
+    template_name = "orders/create.html"
+    success_url = reverse_lazy("orders:order_list")
+    formset_class = OrderItemFormSet
+
+    def get_context_data(self, **kwargs):
+        """Добавить formset для позиций заказа в контекст"""
+        context = super().get_context_data(**kwargs)
+        context["formset"] = self.formset_class(
+            self.request.POST or None, instance=self.get_object()
+        )
+        return context
+
+    def form_valid(self, form):
+        """Добавить обработку formset для позиций заказа"""
+        print(self.request.POST)
+        order = form.save(commit=False)
+        formset = self.formset_class(self.request.POST, instance=order)
+        if formset.is_valid():
+            formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
+            order.save()
+            formset.save()
+            return super().form_valid(form)
+        return super().form_invalid(form)
 
 
 class OrderListView(ListView):
-    queryset = Order.objects.all()
-    template_name = "orders/list.html"
+    """Список заказов"""
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({"form_status": OrderChangeStatus()})
-        return context
+    queryset = Order.objects.prefetch_related("items", "items__dish")
+    template_name = "orders/list.html"
+    paginate_by = 20
 
     def get_queryset(self):
+        """
+        Добавить обработку фильтрации по статусу и поиск по номеру столика
+        """
         queryset = super().get_queryset()
         status = self.request.GET.get("status")
         table_number = self.request.GET.get("table_number")
@@ -54,8 +90,10 @@ class OrderListView(ListView):
 
 
 class OrderChangeStatusView(View):
-    def post(self, request, id):
-        order = get_object_or_404(Order, pk=id)
+    """Изменить статус заказа"""
+
+    def post(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
         form = OrderChangeStatus(request.POST, instance=order)
         if form.is_valid:
             form.save()
@@ -63,11 +101,15 @@ class OrderChangeStatusView(View):
 
 
 class OrderDeleteView(DeleteView):
+    """Удаление заказа"""
+
     model = Order
     success_url = reverse_lazy("orders:order_list")
 
 
 class RevenueView(TemplateView):
+    """Вывод выручки за периоды: все время, месяц, неделю, сегодня"""
+
     template_name = "orders/revenue.html"
 
     def get_context_data(self, **kwargs):

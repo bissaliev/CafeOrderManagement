@@ -9,6 +9,7 @@ class TestOrderLogic(TestCase):
 
     name_list = "orders:order_list"
     name_create = "orders:order_create"
+    name_edit = "orders:order_edit"
     name_delete = "orders:order_delete"
     name_update_status = "orders:order_update_status"
     name_revenue = "orders:revenue"
@@ -49,6 +50,48 @@ class TestOrderLogic(TestCase):
         url = reverse(self.name_create)
         self.client.post(url, data=data)
         self.assertEqual(Order.objects.count(), count_orders)
+
+    def test_edit_order_is_correct_with_replacement(self):
+        """Проверка редактирования заказа с заменой позиции на новую"""
+        new_dish = Dish.objects.create(name="new_dish", price=200.00)
+        data = {
+            "table_number": 1,
+            "items-TOTAL_FORMS": ["1"],
+            "items-INITIAL_FORMS": ["1"],
+            "items-0-id": [f"{self.order.items.first().id}"],
+            "items-0-dish": [f"{new_dish.id}"],
+            "items-0-quantity": ["3"],
+        }
+        count_orders = Order.objects.count()
+        url = reverse(self.name_edit, args=[self.order.id])
+        response = self.client.post(url, data=data)
+
+        self.assertRedirects(response, reverse(self.name_list))
+        self.assertEqual(Order.objects.count(), count_orders)
+        self.assertEqual(self.order.items.count(), 1)
+
+    def test_edit_order_is_correct_with_addition(self):
+        """Проверка редактирования заказа с добавлением новой позиции"""
+        new_dish = Dish.objects.create(name="new_dish", price=200.00)
+        item = self.order.items.first()
+        data = {
+            "table_number": 1,
+            "items-TOTAL_FORMS": ["2"],
+            "items-INITIAL_FORMS": ["1"],
+            "items-0-id": [f"{item.id}"],
+            "items-0-dish": [f"{item.dish.id}"],
+            "items-0-quantity": [f"{item.quantity}"],
+            "items-1-id": [""],
+            "items-1-dish": [f"{new_dish.id}"],
+            "items-1-quantity": ["3"],
+        }
+        count_orders = Order.objects.count()
+        url = reverse(self.name_edit, args=[self.order.id])
+        response = self.client.post(url, data=data)
+
+        self.assertRedirects(response, reverse(self.name_list))
+        self.assertEqual(Order.objects.count(), count_orders)
+        self.assertEqual(self.order.items.count(), 2)
 
     def test_update_order_status(self):
         """Статус заказа корректно обновляется"""

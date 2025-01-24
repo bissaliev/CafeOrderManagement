@@ -53,6 +53,7 @@ class TestOrderContent(TestCase):
 
     name_list = "orders:order_list"
     name_create = "orders:order_create"
+    name_edit = "orders:order_edit"
     name_delete = "orders:order_delete"
     name_update_status = "orders:order_update_status"
     name_revenue = "orders:revenue"
@@ -73,7 +74,6 @@ class TestOrderContent(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertIn("object_list", response.context)
-        self.assertIn("form_status", response.context)
         object_list = response.context["object_list"]
         self.assertEqual(len(object_list), 1)
         self.assertEqual(object_list[0].id, self.order.id)
@@ -81,6 +81,14 @@ class TestOrderContent(TestCase):
     def test_content_order_create_render_is_correct(self):
         """Проверка отображения страницы создания заказов"""
         url = reverse(self.name_create)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+        self.assertIn("formset", response.context)
+
+    def test_content_order_edit_render_is_correct(self):
+        """Проверка отображения страницы редактирования заказов"""
+        url = reverse(self.name_edit, args=[self.order.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertIn("form", response.context)

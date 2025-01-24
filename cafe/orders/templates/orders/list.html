@@ -7,7 +7,7 @@
 <div class="container mt-2">
     <h3>{% if request.GET.table_number %}Столик {{ request.GET.table_number }}{% else %}Все заказы{% endif %}: <span class="badge bg-secondary">{{ object_list|length }}</span> заказов</h3>
     <div>
-        <ul class="nav nav-pills nav-fill mb-2 border-warning">
+        <ul class="nav nav-pills nav-fill mb-2 border rounded-3 border-warning">
             <li class="nav-item">
                 <a class="nav-link {% if not request.GET.status %}active bg-warning{% endif %}" aria-current="page" href="{% url 'orders:order_list' %}?table_number={{ request.GET.table_number }}">Все
                     заказы</a>
@@ -41,7 +41,7 @@
 
             {% for order in object_list %}
             <tr>
-                <th scope="row">{{ order.id }} </th>
+                <th scope="row"><a href="{% url 'orders:order_edit' order.id %}">{{ order.id }}</a></th>
                 <td><a class="fs-5 link-underline link-underline-opacity-0 link-warning link-underline-opacity-75-hover"
                         href="{% url 'orders:order_list' %}?table_number={{ order.table_number }}">{{ order.table_number }}</a></td>
                 <td>
@@ -103,5 +103,8 @@
 
         </tbody>
     </table>
+</div>
+<div class="my-5 d-flex justify-content-center">
+    {% include 'includes/pagination.html' %}
 </div>
 {% endblock content %}

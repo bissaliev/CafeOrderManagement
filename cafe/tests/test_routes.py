@@ -44,6 +44,7 @@ class TestOrderRoutes(TestCase):
         reverse_names = (
             ("orders:order_list", None),
             ("orders:order_create", None),
+            ("orders:order_edit", [self.order.id]),
             ("orders:revenue", None),
         )
         for name, arg in reverse_names:

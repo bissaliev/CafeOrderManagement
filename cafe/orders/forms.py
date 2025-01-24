@@ -22,7 +22,7 @@ OrderItemFormSet = inlineformset_factory(
     OrderItem,
     fields=("dish", "quantity"),
     extra=4,
-    can_delete=False,
+    can_delete=True,
     min_num=1,
     validate_min=True,
 )
