@@ -3,7 +3,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView, View
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
-from orders.forms import OrderChangeStatus, OrderCreate, OrderItemFormSet
+from orders.forms import OrderFormChangeStatus, OrderForm, OrderItemFormSet
 from orders.models import Order
 
 
@@ -11,7 +11,7 @@ class OrderCreateUpdateBaseView:
     """Базовый класс для добавления форм обработки позиций заказа"""
 
     queryset = Order.objects.all()
-    form_class = OrderCreate
+    form_class = OrderForm
     template_name = "orders/create.html"
     success_url = reverse_lazy("orders:order_list")
     formset_class = OrderItemFormSet
@@ -83,7 +83,7 @@ class OrderChangeStatusView(View):
 
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
-        form = OrderChangeStatus(request.POST, instance=order)
+        form = OrderFormChangeStatus(request.POST, instance=order)
         if form.is_valid:
             form.save()
         return redirect("orders:order_list")
