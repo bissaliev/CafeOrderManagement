@@ -50,6 +50,20 @@
                         <h3 class="m-3">Позиции заказа:</h3>
 
                         {{ formset.management_form }}
+                        {% if formset.errors %}
+                        {% for error in formset.errors %}
+                        {% if error %}
+                        {% for field in error.values %}
+                        {% for f in field %}
+                        <div class="alert alert-danger">
+                            {{ f|escape }}
+                        </div>
+                        {% endfor %}
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+
                         {% for error in formset.non_form_errors %}
                         <div class="alert alert-danger">
                             {{ error|escape }}

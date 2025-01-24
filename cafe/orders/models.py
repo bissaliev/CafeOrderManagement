@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Case, F, Sum, When
 from django.db.models.functions import Coalesce
@@ -113,7 +114,13 @@ class OrderItem(models.Model):
     dish = models.ForeignKey(
         "menu.Dish", on_delete=models.SET_NULL, null=True, verbose_name="блюдо"
     )
-    quantity = models.PositiveSmallIntegerField("количество", default=1)
+    quantity = models.SmallIntegerField(
+        "количество",
+        default=1,
+        validators=[
+            MinValueValidator(1, "Значение должно быть больше или равно 1.")
+        ],
+    )
     price = models.DecimalField("стоимость", max_digits=10, decimal_places=2)
 
     class Meta:
