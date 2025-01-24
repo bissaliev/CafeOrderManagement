@@ -7,8 +7,8 @@ from orders.forms import OrderChangeStatus, OrderCreate, OrderItemFormSet
 from orders.models import Order
 
 
-class OrderCreateView(CreateView):
-    """Создание заказа"""
+class OrderCreateUpdateBaseView:
+    """Базовый класс для добавления форм обработки позиций заказа"""
 
     queryset = Order.objects.all()
     form_class = OrderCreate
@@ -32,40 +32,29 @@ class OrderCreateView(CreateView):
     def get_context_data(self, **kwargs):
         """Добавить formset для позиций заказа в контекст"""
         context = super().get_context_data(**kwargs)
-        context["formset"] = self.formset_class(self.request.POST or None)
-        return context
-
-
-class OrderUpdateView(UpdateView):
-    """Редактирование заказа"""
-
-    queryset = Order.objects.all()
-    form_class = OrderCreate
-    template_name = "orders/create.html"
-    success_url = reverse_lazy("orders:order_list")
-    formset_class = OrderItemFormSet
-
-    def get_context_data(self, **kwargs):
-        """Добавить formset для позиций заказа в контекст"""
-        context = super().get_context_data(**kwargs)
         context["formset"] = self.formset_class(
-            self.request.POST or None, instance=self.get_object()
+            self.request.POST or None, instance=self.get_instance()
         )
         return context
 
-    def form_valid(self, form):
-        """Добавить обработку formset для позиций заказа"""
-        print(self.request.POST)
-        order = form.save(commit=False)
-        formset = self.formset_class(self.request.POST, instance=order)
-        if formset.is_valid():
-            formset.save(commit=False)
-            for obj in formset.deleted_objects:
-                obj.delete()
-            order.save()
-            formset.save()
-            return super().form_valid(form)
-        return super().form_invalid(form)
+    def get_instance(self):
+        return NotImplementedError(
+            "Метод get_instance() должен быть реализован в наследниках."
+        )
+
+
+class OrderCreateView(OrderCreateUpdateBaseView, CreateView):
+    """Создание заказа"""
+
+    def get_instance(self):
+        return None
+
+
+class OrderUpdateView(OrderCreateUpdateBaseView, UpdateView):
+    """Редактирование заказа"""
+
+    def get_instance(self):
+        return self.get_object()
 
 
 class OrderListView(ListView):
