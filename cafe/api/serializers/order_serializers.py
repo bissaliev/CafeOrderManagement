@@ -1,5 +1,6 @@
-from orders.models import Order, OrderItem
 from rest_framework import serializers
+
+from orders.models import Order, OrderItem
 
 
 class OrderItemReadSerializer(serializers.ModelSerializer):
@@ -45,6 +46,10 @@ class OrderCreateSerializer(OrderBaseSerializer):
     items = OrderItemCreateSerializer(many=True)
 
     def create(self, validated_data: dict):
+        """
+        Создаёт заказ на основе переданных данных и добавляет связанные
+        позиции заказа.
+        """
         items = validated_data.pop("items")
         order = Order.objects.create(**validated_data)
         for item in items:
@@ -52,7 +57,10 @@ class OrderCreateSerializer(OrderBaseSerializer):
         return order
 
     def _save_items(self, instance: Order, items_data: list[dict]):
-        """Обновление позиций в заказе"""
+        """
+        Обновляет или создаёт позиции заказа для переданного заказа,
+        удаляя отсутствующие в новых данных позиции.
+        """
         items_in_db = {i.dish_id: i for i in instance.items.all()}
         for item_data in items_data:
             dish_id = item_data["dish"].id
@@ -65,6 +73,10 @@ class OrderCreateSerializer(OrderBaseSerializer):
         OrderItem.objects.filter(dish_id__in=items_in_db.keys()).delete()
 
     def update(self, instance: Order, validated_data: dict):
+        """
+        Обновляет данные заказа, включая связанные позиции,
+        на основе переданных данных.
+        """
         instance.table_number = validated_data.get(
             "table_number", instance.table_number
         )
