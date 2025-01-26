@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "rest_framework",
     "django_filters",
+    "drf_spectacular",
     "menu.apps.MenuConfig",
     "orders.apps.OrdersConfig",
     "api.apps.ApiConfig",
@@ -104,4 +105,12 @@ INTERNAL_IPS = [
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CafeOrderManagement",
+    "DESCRIPTION": "Веб-приложение для управления заказами в кафе.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
