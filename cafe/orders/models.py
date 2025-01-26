@@ -130,7 +130,15 @@ class OrderItem(models.Model):
     def save(self, *args, **kwargs):
         if not self.price:
             self.price = self.dish.price
-        return super().save(*args, **kwargs)
+        existing_item = OrderItem.objects.filter(
+            order=self.order, dish=self.dish
+        ).first()
+
+        if existing_item and existing_item.pk != self.pk:
+            existing_item.quantity += self.quantity
+            existing_item.save()
+        else:
+            super().save(*args, **kwargs)
 
     @property
     def total_price(self):
