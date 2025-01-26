@@ -1,9 +1,7 @@
-from datetime import datetime, timedelta
-
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Case, F, Sum, When
-from django.db.models.functions import Coalesce
+
+from orders.utils import calculate_revenue
 
 
 class Order(models.Model):
@@ -44,62 +42,11 @@ class Order(models.Model):
     @classmethod
     def get_total_revenue_for_periods(cls):
         """
-        Подсчёт общей выручки за несколько периодов
+        Получение общей выручки за несколько периодов
         (всё время, сегодня, неделя, месяц).
         """
-        now = datetime.now()
-        today = now.date()
-        start_of_week = today - timedelta(days=today.weekday())
-        start_of_month = today.replace(day=1)
-
-        # Фильтруем только оплаченные заказы
         queryset = cls.objects.filter(status=cls.Status.PAID)
-
-        # Агрегируем данные
-        revenue = queryset.aggregate(
-            all_time=Coalesce(
-                Sum(F("items__price") * F("items__quantity")),
-                0,
-                output_field=models.DecimalField(),
-            ),
-            today=Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            updated__date=today,
-                            then=F("items__price") * F("items__quantity"),
-                        )
-                    )
-                ),
-                0,
-                output_field=models.DecimalField(),
-            ),
-            week=Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            updated__date__gte=start_of_week,
-                            then=F("items__price") * F("items__quantity"),
-                        )
-                    )
-                ),
-                0,
-                output_field=models.DecimalField(),
-            ),
-            month=Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            updated__date__gte=start_of_month,
-                            then=F("items__price") * F("items__quantity"),
-                        )
-                    )
-                ),
-                0,
-                output_field=models.DecimalField(),
-            ),
-        )
-        return revenue
+        return calculate_revenue(queryset)
 
 
 class OrderItem(models.Model):
@@ -128,6 +75,11 @@ class OrderItem(models.Model):
         verbose_name_plural = "Позиции заказа"
 
     def save(self, *args, **kwargs):
+        """
+        Устанавливая цену из блюда, если она не задана. Если уже существует
+        позиция с тем же заказом и блюдом, обновляет её количество.
+        В противном случае сохраняет текущий объект как новый.
+        """
         if not self.price:
             self.price = self.dish.price
         existing_item = OrderItem.objects.filter(
