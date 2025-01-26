@@ -1,17 +1,20 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+
+from orders.models import Order
 from api.serializers.order_serializers import (
     OrderChangeStatusSerializer,
     OrderCreateSerializer,
     OrderReadSerializer,
     RevenueSerializer,
 )
-from django_filters.rest_framework import DjangoFilterBackend
-from orders.models import Order
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
 
 
 class OrderViewSet(ModelViewSet):
+    """Заказы"""
+
     queryset = Order.objects.prefetch_related("items", "items__dish")
     serializer_class = OrderReadSerializer
     filter_backends = (DjangoFilterBackend,)
