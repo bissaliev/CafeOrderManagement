@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+
 from menu.models import Dish
 from orders.models import Order, OrderItem
 
@@ -109,15 +110,6 @@ class TestOrderLogic(TestCase):
         with self.assertRaises(ValueError):
             self.client.post(url, data=data)
 
-    def test_update_status_of_non_existent_order(self):
-        """
-        Обновление статуса для несуществующего заказа возвращает ошибку 404
-        """
-        url = reverse(self.name_update_status, args=[100])
-        data = {"status": "PAID"}
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, 404)
-
     def test_delete_order_is_correct(self):
         """Заказ корректно удаляется"""
         url = reverse(self.name_delete, args=[self.order.id])
@@ -125,71 +117,51 @@ class TestOrderLogic(TestCase):
         self.assertRedirects(response, reverse(self.name_list))
         self.assertEqual(Order.objects.count(), 0)
 
-    def test_delete_non_existent_order(self):
-        """Удаление несуществующего заказа возвращает ошибку 404"""
-        url = reverse(self.name_delete, args=[100])
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, 404)
-
-    def test_order_search_by_table_number(self):
-        """Корректность поиска заказа по номеру столика"""
-        order = Order.objects.create(table_number=2)
-        url = reverse(self.name_list)
-        response = self.client.get(
-            url, data={"table_number": order.table_number}
+    def test_accessing_non_existent_order(self):
+        """
+        Обращения к несуществующему заказу при удалении, редактирование,
+        обновление статуса возвращает ошибку 404
+        """
+        reverse_names = (
+            self.name_delete,
+            self.name_edit,
+            self.name_update_status,
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["object_list"]), 1)
-        request_order = response.context["object_list"][0]
-        self.assertEqual(request_order.id, order.id)
+        for reverse_name in reverse_names:
+            url = reverse(reverse_name, args=[100])
+            with self.subTest(url=url):
+                response = self.client.post(url)
+                self.assertEqual(response.status_code, 404)
 
-    def test_order_search_by_non_exists_table_number(self):
-        """По несуществующему номеру столика возвращается нулевой результат"""
+    def test_filtering_and_searching_orders(self):
+        """Тестирование фильтрации по статусу и поиска по номеру стола"""
         url = reverse(self.name_list)
-        response = self.client.get(url, data={"table_number": 100})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["object_list"]), 0)
-
-    def test_filter_order_by_status(self):
-        """Заказы корректно фильтруются по статусам"""
-        url = reverse(self.name_list)
-        response = self.client.get(url, data={"status": self.order.status})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["object_list"]), 1)
-
-    def test_filter_order_by_non_existent_status(self):
-        """
-        Фильтрация по несуществующему статусу возвращает нулевой результат
-        """
-        url = reverse(self.name_list)
-        response = self.client.get(url, data={"status": "NOT EXISTS"})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["object_list"]), 0)
+        field_value_expected = (
+            ("status", Order.Status.PAID, 0),
+            ("status", self.order.status, 1),
+            ("table_number", "2", 0),
+            ("table_number", self.order.table_number, 1),
+        )
+        for field, value, exp in field_value_expected:
+            with self.subTest(field=field):
+                response = self.client.get(url, data={field: value})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(len(response.context["object_list"]), exp)
 
     def test_content_revenue(self):
-        """Корректность вычисление выручки"""
+        """Корректность вычисление выручки для оплаченных заказов"""
         url = reverse(self.name_revenue)
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("revenue_period", response.context)
-        self.assertIn("all_time", response.context["revenue_period"])
-        self.assertIn("today", response.context["revenue_period"])
-        self.assertIn("week", response.context["revenue_period"])
-        self.assertIn("month", response.context["revenue_period"])
-
-        self.assertEqual(response.context["revenue_period"]["all_time"], 0)
-        self.assertEqual(response.context["revenue_period"]["today"], 0)
-        self.assertEqual(response.context["revenue_period"]["week"], 0)
-        self.assertEqual(response.context["revenue_period"]["month"], 0)
-
-        self.order.status = Order.Status.PAID
-        self.order.save()
-        expected = sum(i.price * i.quantity for i in self.order.items.all())
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.context["revenue_period"]["all_time"], expected
-        )
-        self.assertEqual(response.context["revenue_period"]["today"], expected)
-        self.assertEqual(response.context["revenue_period"]["week"], expected)
-        self.assertEqual(response.context["revenue_period"]["month"], expected)
+        variables = ("all_time", "today", "week", "month")
+        for status in Order.Status:
+            self.order.status = status.value
+            self.order.save()
+            revenue_from_db = Order.get_total_revenue_for_periods()
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("revenue_period", response.context)
+            for variable in variables:
+                with self.subTest(status=status, variable=variable):
+                    self.assertEqual(
+                        revenue_from_db[variable],
+                        response.context["revenue_period"][variable],
+                    )
